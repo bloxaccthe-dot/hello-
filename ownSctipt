@@ -65,7 +65,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1,-40,1,0)
 Title.Position = UDim2.new(0,10,0,0)
 Title.BackgroundTransparency = 1
-Title.Text = "🔥 Lac - By: kaljjaj 🔥"
+Title.Text = "🔥 Lac - By:kaljjaj 🔥"
 Title.TextColor3 = Color3.fromRGB(255,255,255)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 20
@@ -88,7 +88,7 @@ UICorner3.CornerRadius = UDim.new(0,8)
 UICorner3.Parent = CloseBtn
 
 -- مربع كتابة
-local TextBox = Instance.new("")
+local TextBox = Instance.new("TextBox")
 TextBox.Size = UDim2.new(1,-30,0,40)
 TextBox.Position = UDim2.new(0,15,0,55)
 TextBox.PlaceholderText = "اكتب أول حرفين من اسم الهدف"
@@ -142,7 +142,7 @@ local function startBang(targetHRP, targetPlr)
     local speed = 6
     local currentOffset = baseDistance
 
-    -- فصل أي اتصال قديم
+    -- فصل أي اتصال قديم قبل إنشاء اتصال جديد
     if connection then
         connection:Disconnect()
         connection = nil
@@ -211,10 +211,18 @@ AttachBtn.MouseButton1Click:Connect(function()
     startBang(targetPlayer.Character.HumanoidRootPart, targetPlayer)
 end)
 
--- استمرار بعد الموت
+-- ✨ استمرار بعد الموت مع إعادة ضبط الاتصال
 player.CharacterAdded:Connect(function(char)
+    -- فصل أي اتصال قديم فور موت الشخصية
+    if connection then
+        connection:Disconnect()
+        connection = nil
+    end
+
     character = char
     humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+    -- إذا كان هناك attach مفعل مع لاعب حالي، أعد تشغيل attach
     if attached and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
         task.wait(1)
         startBang(targetPlayer.Character.HumanoidRootPart, targetPlayer)
