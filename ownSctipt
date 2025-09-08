@@ -8,7 +8,7 @@ ScreenGui.Name = "StickyBangGUI"
 ScreenGui.Parent = game:GetService("CoreGui")
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 320, 0, 180)
+Frame.Size = UDim2.new(0, 320, 0, 230)
 Frame.Position = UDim2.new(0.5, -160, 0.3, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Frame.BorderSizePixel = 0
@@ -23,7 +23,6 @@ UICorner.Parent = Frame
 
 -- ✋ سحب
 local dragging, dragInput, dragStart, startPos
-
 Frame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
@@ -36,13 +35,11 @@ Frame.InputBegan:Connect(function(input)
         end)
     end
 end)
-
 Frame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
     if dragging and input == dragInput then
         local delta = input.Position - dragStart
@@ -82,7 +79,6 @@ CloseBtn.TextColor3 = Color3.new(1,1,1)
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.TextSize = 20
 CloseBtn.Parent = TitleBar
-
 local UICorner3 = Instance.new("UICorner")
 UICorner3.CornerRadius = UDim.new(0,8)
 UICorner3.Parent = CloseBtn
@@ -98,12 +94,11 @@ TextBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
 TextBox.Font = Enum.Font.Gotham
 TextBox.TextSize = 18
 TextBox.Parent = Frame
-
 local UICorner4 = Instance.new("UICorner")
 UICorner4.CornerRadius = UDim.new(0,8)
 UICorner4.Parent = TextBox
 
--- زر التفعيل
+-- زر Bang (خلف)
 local AttachBtn = Instance.new("TextButton")
 AttachBtn.Size = UDim2.new(1,-30,0,45)
 AttachBtn.Position = UDim2.new(0,15,0,110)
@@ -113,18 +108,33 @@ AttachBtn.TextColor3 = Color3.fromRGB(255,255,255)
 AttachBtn.Font = Enum.Font.GothamBold
 AttachBtn.TextSize = 20
 AttachBtn.Parent = Frame
-
 local UICorner5 = Instance.new("UICorner")
 UICorner5.CornerRadius = UDim.new(0,10)
 UICorner5.Parent = AttachBtn
 
--- 🔁 منطق البانغ
-local attached = false
+-- زر Face Bang (أمام)
+local FaceBtn = Instance.new("TextButton")
+FaceBtn.Size = UDim2.new(1,-30,0,45)
+FaceBtn.Position = UDim2.new(0,15,0,160)
+FaceBtn.BackgroundColor3 = Color3.fromRGB(150,80,0)
+FaceBtn.Text = "💥 Face Bang 🚀"
+FaceBtn.TextColor3 = Color3.fromRGB(255,255,255)
+FaceBtn.Font = Enum.Font.GothamBold
+FaceBtn.TextSize = 20
+FaceBtn.Parent = Frame
+local UICorner6 = Instance.new("UICorner")
+UICorner6.CornerRadius = UDim.new(0,10)
+UICorner6.Parent = FaceBtn
+
+-- 🔁 المنطق
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local connection
-local targetPlayer -- نخزن الهدف هنا
+
+-- خلف
+local attached, connection, targetPlayer
+-- أمام
+local faceAttached, faceConnection, faceTarget
 
 local function findPlayerByNamePrefix(prefix)
     prefix = prefix:lower()
@@ -136,106 +146,92 @@ local function findPlayerByNamePrefix(prefix)
     return nil
 end
 
+-- Bang خلفي
 local function startBang(targetHRP, targetPlr)
-    local baseDistance = 1.2
-    local direction = 1
-    local speed = 6
-    local currentOffset = baseDistance
-
-    -- فصل أي اتصال قديم قبل إنشاء اتصال جديد
-    if connection then
-        connection:Disconnect()
-        connection = nil
-    end
-
-    connection = RunService.RenderStepped:Connect(function(delta)  
-        if not attached or not targetPlr.Character or not targetPlr.Character:FindFirstChild("HumanoidRootPart") then  
-            attached = false  
-            AttachBtn.Text = "🚀 Bang"  
-            if connection then connection:Disconnect() end  
-            return  
-        end  
-
-        humanoidRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")  
-        if not humanoidRootPart then return end  
-
-        currentOffset = currentOffset + direction * speed * delta  
-        if currentOffset > baseDistance + 0.5 then  
-            direction = -1  
-        elseif currentOffset < baseDistance - 0.5 then  
-            direction = 1  
-        end  
-
-        local targetPos = targetHRP.Position  
-        local targetLook = targetHRP.CFrame.LookVector  
-        local newPos = targetPos - targetLook * currentOffset   
-        humanoidRootPart.CFrame = CFrame.new(newPos, targetPos)  
+    local baseDistance, direction, speed, currentOffset = 1.2, 1, 6, 1.2
+    if connection then connection:Disconnect() end
+    connection = RunService.RenderStepped:Connect(function(delta)
+        if not attached or not targetPlr.Character or not targetPlr.Character:FindFirstChild("HumanoidRootPart") then
+            attached = false; AttachBtn.Text = "🚀 Bang"; if connection then connection:Disconnect() end; return
+        end
+        local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart"); if not myHRP then return end
+        currentOffset = currentOffset + direction * speed * delta
+        if currentOffset > baseDistance + 0.5 then direction = -1 elseif currentOffset < baseDistance - 0.5 then direction = 1 end
+        local targetPos, targetLook = targetHRP.Position, targetHRP.CFrame.LookVector
+        myHRP.CFrame = CFrame.new(targetPos - targetLook * currentOffset, targetPos)
     end)
 end
 
--- ✨ زر التفعيل مع دعم تغيير الهدف بسهولة
-AttachBtn.MouseButton1Click:Connect(function()
-    -- إذا كان هناك attach جاري، افصل الاتصال أولاً
-    if attached then
-        attached = false
-        targetPlayer = nil
-        AttachBtn.Text = "🚀 Bang"
-        if connection then
-            connection:Disconnect()
-            connection = nil
+-- Face Bang أمامي (يلتصق بالوجه بدقة، ثابت مع التذبذب)
+local function startFaceBang(targetPlr)
+    local direction, speed, currentOffset = 1, 6, 1.2
+    if faceConnection then faceConnection:Disconnect() end
+
+    faceConnection = RunService.RenderStepped:Connect(function(delta)
+        if not faceAttached or not targetPlr.Character then
+            faceAttached = false
+            FaceBtn.Text = "💥 Face Bang 🚀"
+            if faceConnection then faceConnection:Disconnect() end
+            return
         end
-        return
+
+        local targetHead = targetPlr.Character:FindFirstChild("Head")
+        local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if not targetHead or not myHRP then return end
+
+        -- حركة تذبذب أمام الوجه
+        currentOffset = currentOffset + direction * speed * delta
+        if currentOffset > 1.7 then direction = -1
+        elseif currentOffset < 0.7 then direction = 1
+        end
+
+        -- وضع ثابت على الوجه + ارتفاع صغير 0.3 لتجنب الالتصاق على القدمين
+        local facePosition = targetHead.Position + Vector3.new(0, 0.3, 0)
+        local offsetPosition = facePosition + targetHead.CFrame.LookVector * currentOffset
+        myHRP.CFrame = CFrame.new(offsetPosition, facePosition)
+    end)
+end
+
+-- زر Bang
+AttachBtn.MouseButton1Click:Connect(function()
+    if attached then attached = false; targetPlayer=nil; AttachBtn.Text="🚀 Bang"; if connection then connection:Disconnect() end; return end
+    local prefix = TextBox.Text; if prefix=="" then warn("اكتب أول حرفين من اسم الهدف") return end
+    local newTarget = findPlayerByNamePrefix(prefix); if not newTarget or not newTarget.Character or not newTarget.Character:FindFirstChild("HumanoidRootPart") then warn("اللاعب غير موجود") return end
+    targetPlayer = newTarget; attached = true; AttachBtn.Text="إيقاف ❌"; startBang(newTarget.Character.HumanoidRootPart, newTarget)
+end)
+
+-- زر Face Bang
+FaceBtn.MouseButton1Click:Connect(function()
+    if faceAttached then
+        faceAttached = false; faceTarget=nil; FaceBtn.Text="💥 Face Bang 🚀"; if faceConnection then faceConnection:Disconnect() end; return
     end
 
     local prefix = TextBox.Text
-    if prefix == "" then
-        warn("اكتب أول حرفين من اسم الهدف")
-        return
-    end
+    if prefix == "" then warn("اكتب أول حرفين من اسم الهدف") return end
 
     local newTarget = findPlayerByNamePrefix(prefix)
-    if not newTarget or not newTarget.Character or not newTarget.Character:FindFirstChild("HumanoidRootPart") then
-        warn("اللاعب غير موجود أو لا يملك HumanoidRootPart")
+    if not newTarget or not newTarget.Character or not newTarget.Character:FindFirstChild("Head") then
+        warn("اللاعب غير موجود أو الرأس غير جاهز")
         return
     end
 
-    -- فصل أي اتصال قديم قبل البدء
-    if connection then
-        connection:Disconnect()
-        connection = nil
-    end
-
-    targetPlayer = newTarget
-    attached = true
-    AttachBtn.Text = "إيقاف ❌"
-    startBang(targetPlayer.Character.HumanoidRootPart, targetPlayer)
+    faceTarget = newTarget
+    faceAttached = true
+    FaceBtn.Text = "إيقاف ❌"
+    startFaceBang(faceTarget)
 end)
 
--- ✨ استمرار بعد الموت مع إعادة ضبط الاتصال
+-- إعادة تفعيل بعد الموت
 player.CharacterAdded:Connect(function(char)
-    -- فصل أي اتصال قديم فور موت الشخصية
-    if connection then
-        connection:Disconnect()
-        connection = nil
-    end
-
-    character = char
-    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-
-    -- إذا كان هناك attach مفعل مع لاعب حالي، أعد تشغيل attach
-    if attached and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        task.wait(1)
-        startBang(targetPlayer.Character.HumanoidRootPart, targetPlayer)
-    end
+    character=char; humanoidRootPart=character:WaitForChild("HumanoidRootPart")
+    if attached and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then task.wait(1) startBang(targetPlayer.Character.HumanoidRootPart, targetPlayer) end
+    if faceAttached and faceTarget and faceTarget.Character and faceTarget.Character:FindFirstChild("Head") then task.wait(1) startFaceBang(faceTarget) end
 end)
 
 -- زر الإغلاق
 CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
-    if connection then
-        connection:Disconnect()
-        connection = nil
-    end
-    attached = false
-    targetPlayer = nil
+    if connection then connection:Disconnect() end
+    if faceConnection then faceConnection:Disconnect() end
+    attached, faceAttached=false,false; targetPlayer, faceTarget=nil,nil
 end)
