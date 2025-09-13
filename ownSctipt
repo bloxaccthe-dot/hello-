@@ -109,7 +109,7 @@ local TextBox = Instance.new("TextBox")
 TextBox.Size = UDim2.new(1,-30,0,40)
 TextBox.Position = UDim2.new(0,15,0,20)
 TextBox.PlaceholderText = "اكتب أول حرفين من اسم الهدف"
-TextBox.ClearTextOnFocus = false
+TextBox.ClearTextOnFocus = true -- 🟢 يمسح النص عند الضغط
 TextBox.TextColor3 = Color3.fromRGB(255,255,255)
 TextBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
 TextBox.Font = Enum.Font.Gotham
@@ -181,6 +181,16 @@ local function findPlayerByNamePrefix(prefix)
     end
     return nil
 end
+
+-- 🟢 الإكمال عند الضغط Enter
+TextBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed and TextBox.Text ~= "" then
+        local found = findPlayerByNamePrefix(TextBox.Text)
+        if found then
+            TextBox.Text = found.Name -- يكمل الاسم كامل
+        end
+    end
+end)
 
 -- Bang خلفي
 local function startBang(targetHRP, targetPlr)
